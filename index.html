@@ -16,7 +16,6 @@
             --white: #ffffff;
         }
 
-        /* 반응형 기준 폰트 크기 설정 */
         html { font-size: 16px; }
         @media (max-width: 1200px) { html { font-size: 14px; } }
         @media (max-width: 900px) { html { font-size: 12px; } }
@@ -38,7 +37,6 @@
             background: radial-gradient(circle at center, #111 0%, #000 100%);
         }
 
-        /* 상단 바 */
         .top-bar {
             width: 100%; min-height: 100px; height: auto;
             background: linear-gradient(to bottom, #1a1a1a, #000);
@@ -92,7 +90,6 @@
         .settings-item { display: flex; align-items: center; justify-content: space-between; color: #fff; font-size: 1.2rem; font-weight: bold; }
         input[type="range"] { width: 100px; accent-color: var(--gold); }
 
-        /* 경기장 */
         #game-container {
             position: relative; flex: 1; width: 100%;
             display: flex; align-items: center; justify-content: center;
@@ -110,7 +107,6 @@
             touch-action: none;
         }
 
-        /* 카운트다운 오버레이 */
         #countdown-overlay {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-family: 'Black Han Sans', sans-serif;
@@ -159,7 +155,6 @@
         .options-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; align-items: center; width: 100%; }
         .options-row { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
         .options-label { color: var(--gold); font-family: 'Do Hyeon', sans-serif; font-size: 1.5rem; width: 100px; text-align: right; }
-        @media (max-width: 600px) { .options-label { text-align: center; width: 100%; margin-bottom: 5px; } }
         
         .m-btn {
             background: rgba(0,0,0,0.6); color: #fff; border: 2px solid rgba(255,215,0,0.4);
@@ -236,7 +231,6 @@
             display: inline-block;
             filter: drop-shadow(0 10px 20px rgba(255,215,0,0.8));
         }
-        @keyframes flip { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
 
         #portrait-warning {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -361,7 +355,7 @@
                     <li>🏆 <b>승리 조건:</b> 제한 시간 내에 <b>먼저 3골</b>을 넣거나, 시간이 종료될 때 <b>점수가 더 높은 쪽</b>이 승리합니다!</li>
                     <li>⏱️ <b>동점 상황:</b> 시간 종료 시 동점이라면, 긴장감 넘치는 <b>동전 던지기</b>로 승부를 결정합니다.</li>
                     <li>⚽ <b>축구공 극성:</b> 골을 넣을 때마다 공의 극(<b>N ↔ S</b>)이 바뀝니다.</li>
-                    <li>👆 <b>조작 방법:</b> 화면 내 내 구역을 터치/클릭하여 자석의 극을 바꿉니다.</li>
+                    <li>👆 <b>조작 방법:</b> 자석 근처를 터치하여 잡은 뒤, 원하는 곳으로 끌고 가세요. 터치 시 극이 바뀝니다.</li>
                     <li>🚀 <b>공격과 수비:</b> 공과 <b>같은 극</b>으로 맞춰 강하게 밀어내고(슛), <b>다른 극</b>으로 맞춰 당겨오세요(패스 차단).</li>
                 </ul>
                 <center><button class="btn-big" onclick="game.startPlay()">킥 오프!</button></center>
@@ -453,56 +447,41 @@
             this.playBeat();
         },
         
-        stopBGM() {
-            this.isPlayingBgm = false;
-        },
+        stopBGM() { this.isPlayingBgm = false; },
         
         playBeat() {
             if(!this.isPlayingBgm) return;
             const now = this.ctx.currentTime;
             
             if(this.seq % 4 === 0) {
-                const k = this.ctx.createOscillator();
-                k.type = 'sine';
-                k.frequency.setValueAtTime(150, now);
-                k.frequency.exponentialRampToValueAtTime(10, now + 0.15);
-                const kG = this.ctx.createGain();
-                kG.gain.setValueAtTime(1.0 * this.bgmVol, now);
+                const k = this.ctx.createOscillator(); k.type = 'sine';
+                k.frequency.setValueAtTime(150, now); k.frequency.exponentialRampToValueAtTime(10, now + 0.15);
+                const kG = this.ctx.createGain(); kG.gain.setValueAtTime(1.0 * this.bgmVol, now);
                 kG.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-                k.connect(kG); kG.connect(this.bgmGain);
-                k.start(now); k.stop(now + 0.15);
+                k.connect(kG); kG.connect(this.bgmGain); k.start(now); k.stop(now + 0.15);
             }
 
             if(this.seq % 2 !== 0) {
-                const bs = this.ctx.sampleRate * 0.05;
-                const b = this.ctx.createBuffer(1, bs, this.ctx.sampleRate);
-                const d = b.getChannelData(0);
-                for(let i=0; i<bs; i++) d[i] = Math.random()*2-1;
+                const bs = this.ctx.sampleRate * 0.05; const b = this.ctx.createBuffer(1, bs, this.ctx.sampleRate);
+                const d = b.getChannelData(0); for(let i=0; i<bs; i++) d[i] = Math.random()*2-1;
                 const nz = this.ctx.createBufferSource(); nz.buffer = b;
                 const hp = this.ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 5000;
-                const g = this.ctx.createGain();
-                g.gain.setValueAtTime(0.2 * this.bgmVol, now);
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(0.2 * this.bgmVol, now);
                 g.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-                nz.connect(hp); hp.connect(g); g.connect(this.bgmGain);
-                nz.start(now);
+                nz.connect(hp); hp.connect(g); g.connect(this.bgmGain); nz.start(now);
             }
             
-            const b = this.ctx.createOscillator();
-            b.type = 'sawtooth';
+            const b = this.ctx.createOscillator(); b.type = 'sawtooth';
             const bassNotes = [55.00, 43.65, 65.41, 49.00]; 
             const noteIdx = Math.floor(this.seq / 16) % 4;
             b.frequency.setValueAtTime(bassNotes[noteIdx], now); 
             
-            const bG = this.ctx.createGain();
-            bG.gain.setValueAtTime(0.4 * this.bgmVol, now);
+            const bG = this.ctx.createGain(); bG.gain.setValueAtTime(0.4 * this.bgmVol, now);
             bG.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-            const lpf = this.ctx.createBiquadFilter();
-            lpf.type = 'lowpass'; lpf.frequency.setValueAtTime(800, now);
-            b.connect(lpf); lpf.connect(bG); bG.connect(this.bgmGain);
-            b.start(now); b.stop(now + 0.15);
+            const lpf = this.ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.setValueAtTime(800, now);
+            b.connect(lpf); lpf.connect(bG); bG.connect(this.bgmGain); b.start(now); b.stop(now + 0.15);
 
-            this.seq++;
-            setTimeout(() => this.playBeat(), 100); 
+            this.seq++; setTimeout(() => this.playBeat(), 100); 
         }
     };
 
@@ -527,16 +506,11 @@
     const game = {
         state: 'START',
         w: 1200, h: 750,
-        matchType: 1, 
-        timeLimit: 180, 
-        timeRemaining: 180,
-        setStartTime: 0,
-        currentSet: 1,
-        p1Wins: 0, p2Wins: 0,
-        countdown: 0, 
-        isCounting: false,
-        p1: { name: '대한민국', code: 'KOR', col: '#e74c3c', x: 150, y: 375, tx: 150, ty: 375, pol: 'N', score: 0, r: 55 },
-        p2: { name: '브라질', code: 'BRA', col: '#f1c40f', x: 1050, y: 375, tx: 1050, ty: 375, pol: 'N', score: 0, r: 55 },
+        matchType: 1, timeLimit: 180, timeRemaining: 180,
+        setStartTime: 0, currentSet: 1,
+        p1Wins: 0, p2Wins: 0, countdown: 0, isCounting: false,
+        p1: { name: '대한민국', code: 'KOR', col: '#e74c3c', x: 150, y: 375, tx: 150, ty: 375, pol: 'N', score: 0, r: 55, touchId: null },
+        p2: { name: '브라질', code: 'BRA', col: '#f1c40f', x: 1050, y: 375, tx: 1050, ty: 375, pol: 'N', score: 0, r: 55, touchId: null },
         ball: { x: 600, y: 375, vx: 0, vy: 0, r: 30, pol: 'N' },
         posts: [
             { x: 0, y: 250, w: 45, h: 25 }, { x: 0, y: 475, w: 45, h: 25 },
@@ -556,18 +530,15 @@
             const ratio = this.w / this.h;
             const parent = document.getElementById('game-container');
             if(!parent) return;
-            let pw = parent.clientWidth;
-            let ph = parent.clientHeight;
-            let w = pw * 0.95;
-            let h = w / ratio;
+            let pw = parent.clientWidth, ph = parent.clientHeight;
+            let w = pw * 0.95, h = w / ratio;
             if (h > ph * 0.95) { h = ph * 0.95; w = h * ratio; }
             canvas.width = this.w; canvas.height = this.h;
             canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
         },
 
         buildGrids() {
-            const g1 = document.getElementById('grid-1');
-            const g2 = document.getElementById('grid-2');
+            const g1 = document.getElementById('grid-1'), g2 = document.getElementById('grid-2');
             TEAMS.forEach(t => {
                 g1?.appendChild(this.makeBtn(t, 1));
                 g2?.appendChild(this.makeBtn(t, 2));
@@ -587,12 +558,9 @@
                 </div>
             `;
             d.onclick = () => {
-                const p = this[`p${pNum}`];
-                p.code = t.id; 
+                const p = this[`p${pNum}`]; p.code = t.id; 
                 document.querySelectorAll(`#grid-${pNum} .team-item`).forEach(b => b.classList.remove('selected'));
-                d.classList.add('selected');
-                audioSys.init();
-                audioSys.playSfx(500, 'sine', 0.1);
+                d.classList.add('selected'); audioSys.init(); audioSys.playSfx(500, 'sine', 0.1);
             };
             return d;
         },
@@ -605,40 +573,86 @@
                 this.timeLimit = val;
                 document.querySelectorAll('.options-row:nth-child(2) .m-btn').forEach(b => b.classList.remove('selected'));
             }
-            btn.classList.add('selected');
-            audioSys.init();
-            audioSys.playSfx(600, 'square', 0.1);
+            btn.classList.add('selected'); audioSys.init(); audioSys.playSfx(600, 'square', 0.1);
         },
 
         setupInputs() {
-            const handleTouch = (x, y, isTap) => {
-                if(this.state !== 'PLAY' || this.isCounting) return;
-                const r = canvas.getBoundingClientRect();
-                const mx = (x - r.left) * (this.w / r.width); // 0 ~ 1200
-                const my = (y - r.top) * (this.h / r.height);  // 0 ~ 750
+            const getCanvasCoords = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * (this.w / rect.width),
+                    y: (clientY - rect.top) * (this.h / rect.height)
+                };
+            };
+
+            const startAction = (id, x, y) => {
+                if (this.state !== 'PLAY' || this.isCounting) return;
                 
-                // 트랙패드 방식 매핑 조작
-                // 1P 구역(왼쪽 0~600) 터치 시 -> 자석 위치를 전체 필드(0~1200)로 매핑
-                if (mx < this.w/2) {
-                    this.p1.tx = mx * 2; // 왼쪽 절반 터치로 전체 가로 이동 가능
-                    this.p1.ty = my;
-                    if(isTap) { this.p1.pol = this.p1.pol === 'N' ? 'S' : 'N'; audioSys.playSfx(600, 'square', 0.05, 0.3); }
-                } 
-                // 2P 구역(오른쪽 600~1200) 터치 시 -> 자석 위치를 전체 필드(0~1200)로 매핑
-                else {
-                    this.p2.tx = (mx - this.w/2) * 2; // 오른쪽 절반 터치로 전체 가로 이동 가능
-                    this.p2.ty = my;
-                    if(isTap) { this.p2.pol = this.p2.pol === 'N' ? 'S' : 'N'; audioSys.playSfx(800, 'square', 0.05, 0.3); }
+                // 각 플레이어와의 거리 계산
+                const d1 = Math.sqrt((x - this.p1.x)**2 + (y - this.p1.y)**2);
+                const d2 = Math.sqrt((x - this.p2.x)**2 + (y - this.p2.y)**2);
+                const grabLimit = 250; // 근접 감지 범위 (픽셀)
+
+                // 가장 가깝고 범위 안에 있는 플레이어 할당
+                if (d1 < d2 && d1 < grabLimit && this.p1.touchId === null) {
+                    this.p1.touchId = id;
+                    this.p1.tx = x; this.p1.ty = y;
+                    this.p1.pol = this.p1.pol === 'N' ? 'S' : 'N';
+                    audioSys.playSfx(600, 'square', 0.05, 0.3);
+                } else if (d2 < d1 && d2 < grabLimit && this.p2.touchId === null) {
+                    this.p2.touchId = id;
+                    this.p2.tx = x; this.p2.ty = y;
+                    this.p2.pol = this.p2.pol === 'N' ? 'S' : 'N';
+                    audioSys.playSfx(800, 'square', 0.05, 0.3);
                 }
             };
-            canvas.addEventListener('mousedown', e => handleTouch(e.clientX, e.clientY, true));
-            canvas.addEventListener('mousemove', e => handleTouch(e.clientX, e.clientY, false));
+
+            const moveAction = (id, x, y) => {
+                if (this.p1.touchId === id) { this.p1.tx = x; this.p1.ty = y; }
+                else if (this.p2.touchId === id) { this.p2.tx = x; this.p2.ty = y; }
+            };
+
+            const endAction = (id) => {
+                if (this.p1.touchId === id) this.p1.touchId = null;
+                if (this.p2.touchId === id) this.p2.touchId = null;
+            };
+
+            // 마우스 이벤트
+            canvas.addEventListener('mousedown', e => {
+                const {x, y} = getCanvasCoords(e);
+                startAction('mouse', x, y);
+            });
+            window.addEventListener('mousemove', e => {
+                const {x, y} = getCanvasCoords(e);
+                moveAction('mouse', x, y);
+            });
+            window.addEventListener('mouseup', () => endAction('mouse'));
+
+            // 터치 이벤트 (멀티터치 대응)
             canvas.addEventListener('touchstart', e => {
-                e.preventDefault(); for(let t of e.changedTouches) handleTouch(t.clientX, t.clientY, true);
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                for (let t of e.changedTouches) {
+                    const x = (t.clientX - rect.left) * (this.w / rect.width);
+                    const y = (t.clientY - rect.top) * (this.h / rect.height);
+                    startAction(t.identifier, x, y);
+                }
             }, {passive: false});
-            canvas.addEventListener('touchmove', e => {
-                e.preventDefault(); for(let t of e.changedTouches) handleTouch(t.clientX, t.clientY, false);
+
+            window.addEventListener('touchmove', e => {
+                const rect = canvas.getBoundingClientRect();
+                for (let t of e.changedTouches) {
+                    const x = (t.clientX - rect.left) * (this.w / rect.width);
+                    const y = (t.clientY - rect.top) * (this.h / rect.height);
+                    moveAction(t.identifier, x, y);
+                }
             }, {passive: false});
+
+            window.addEventListener('touchend', e => {
+                for (let t of e.changedTouches) endAction(t.identifier);
+            });
         },
 
         showGuide() {
@@ -649,66 +663,38 @@
         },
 
         startPlay() {
-            this.currentSet = 1;
-            this.p1Wins = 0;
-            this.p2Wins = 0;
-            logs = [];
-            
-            const t1 = TEAMS.find(t => t.id === this.p1.code);
-            const t2 = TEAMS.find(t => t.id === this.p2.code);
+            this.currentSet = 1; this.p1Wins = 0; this.p2Wins = 0; logs = [];
+            const t1 = TEAMS.find(t => t.id === this.p1.code), t2 = TEAMS.find(t => t.id === this.p2.code);
             this.p1.name = t1.name; this.p1.col = t1.color;
-            if (this.p1.code === this.p2.code) {
-                this.p2.name = t2.name + ' (어웨이)'; this.p2.col = t2.awayCol;
-            } else {
-                this.p2.name = t2.name; this.p2.col = t2.color;
-            }
-
+            if (this.p1.code === this.p2.code) { this.p2.name = t2.name + ' (어웨이)'; this.p2.col = t2.awayCol; }
+            else { this.p2.name = t2.name; this.p2.col = t2.color; }
             document.getElementById('guide-screen')?.classList.add('hidden');
             document.getElementById('top-nav')?.classList.remove('hidden');
-            this.startSet();
-            audioSys.startBGM(); 
-            this.resize();
+            this.startSet(); audioSys.startBGM(); this.resize();
         },
 
         startSet() {
-            this.state = 'PLAY';
-            this.p1.score = 0; this.p2.score = 0;
-            this.timeRemaining = this.timeLimit;
-            
+            this.state = 'PLAY'; this.p1.score = 0; this.p2.score = 0; this.timeRemaining = this.timeLimit;
             const setUi = document.getElementById('current-set-ui');
             if(setUi) setUi.innerText = this.matchType === 1 ? '단판 결승' : `${this.currentSet}세트`;
-
-            this.updateBoard(); 
-            this.resetPositions();
-            this.startCountdown();
+            this.updateBoard(); this.resetPositions(); this.startCountdown();
         },
 
         startCountdown() {
-            this.isCounting = true;
-            this.countdown = 3;
+            this.isCounting = true; this.countdown = 3;
             const overlay = document.getElementById('countdown-overlay');
             overlay.style.display = 'block';
-            
             const runCount = () => {
                 if(this.countdown > 0) {
                     overlay.innerText = this.countdown;
-                    overlay.classList.remove('count-anim');
-                    void overlay.offsetWidth; 
-                    overlay.classList.add('count-anim');
-                    audioSys.playSfx(440, 'sine', 0.1);
-                    this.countdown--;
-                    setTimeout(runCount, 1000);
+                    overlay.classList.remove('count-anim'); void overlay.offsetWidth; overlay.classList.add('count-anim');
+                    audioSys.playSfx(440, 'sine', 0.1); this.countdown--; setTimeout(runCount, 1000);
                 } else {
                     overlay.innerText = 'START!';
-                    overlay.classList.remove('count-anim');
-                    void overlay.offsetWidth;
-                    overlay.classList.add('count-anim');
+                    overlay.classList.remove('count-anim'); void overlay.offsetWidth; overlay.classList.add('count-anim');
                     audioSys.playSfx(880, 'sine', 0.3);
-                    
                     setTimeout(() => {
-                        overlay.style.display = 'none';
-                        this.isCounting = false;
-                        this.setStartTime = Date.now();
+                        overlay.style.display = 'none'; this.isCounting = false; this.setStartTime = Date.now();
                     }, 500);
                 }
             };
@@ -716,19 +702,15 @@
         },
 
         resetPositions() {
-            this.p1.x = 150; this.p1.y = 375;
-            this.p1.tx = 150; this.p1.ty = 375;
-            this.p2.x = 1050; this.p2.y = 375;
-            this.p2.tx = 1050; this.p2.ty = 375;
+            this.p1.x = 150; this.p1.y = 375; this.p1.tx = 150; this.p1.ty = 375; this.p1.touchId = null;
+            this.p2.x = 1050; this.p2.y = 375; this.p2.tx = 1050; this.p2.ty = 375; this.p2.touchId = null;
             this.resetBall();
         },
 
         nextSet() {
-            this.currentSet++;
-            document.getElementById('result-screen')?.classList.add('hidden');
+            this.currentSet++; document.getElementById('result-screen')?.classList.add('hidden');
             document.getElementById('top-nav')?.classList.remove('hidden');
-            this.startSet();
-            audioSys.startBGM();
+            this.startSet(); audioSys.startBGM();
         },
 
         goHome() {
@@ -736,8 +718,7 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('start-screen')?.classList.remove('hidden');
             document.getElementById('top-nav')?.classList.add('hidden');
-            sparks = [];
-            audioSys.stopBGM(); 
+            sparks = []; audioSys.stopBGM(); 
         },
 
         toggleSettings() {
@@ -745,67 +726,43 @@
             if(p) p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
         },
 
-        resetBall() { 
-            this.ball.x = 600; this.ball.y = 375; 
-            this.ball.vx = 0; this.ball.vy = 0; 
-        },
+        resetBall() { this.ball.x = 600; this.ball.y = 375; this.ball.vx = 0; this.ball.vy = 0; },
 
         updateBoard() {
-            const sn1 = document.getElementById('score-name-1');
-            const sn2 = document.getElementById('score-name-2');
-            const sv = document.getElementById('score-val');
-            if(sn1) sn1.innerText = this.p1.name;
-            if(sn2) sn2.innerText = this.p2.name;
+            const sn1 = document.getElementById('score-name-1'), sn2 = document.getElementById('score-name-2'), sv = document.getElementById('score-val');
+            if(sn1) sn1.innerText = this.p1.name; if(sn2) sn2.innerText = this.p2.name;
             if(sv) sv.innerText = `${this.p1.score} : ${this.p2.score}`;
-            
             const tUi = document.getElementById('timer-ui');
             if(tUi) {
-                const m = Math.floor(this.timeRemaining / 60);
-                const s = this.timeRemaining % 60;
+                const m = Math.floor(this.timeRemaining / 60), s = this.timeRemaining % 60;
                 tUi.innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                if(this.timeRemaining <= 10) tUi.style.color = '#ff2a2a';
-                else tUi.style.color = '#000';
+                tUi.style.color = this.timeRemaining <= 10 ? '#ff2a2a' : '#fff';
             }
         },
 
         msg(m) {
-            const el = document.getElementById('tutor');
-            if(!el) return;
-            el.innerText = m; el.style.opacity = 1;
-            setTimeout(() => el.style.opacity = 0, 3000);
+            const el = document.getElementById('tutor'); if(!el) return;
+            el.innerText = m; el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 3000);
         },
 
         burst(x, y, big=false) {
             const cols = ['#ffd700', '#ff00ff', '#00ffff', '#ff2a2a', '#ffffff'];
             const count = big ? 150 : 80;
             for(let i=0; i<count; i++) {
-                sparks.push({
-                    x, y, 
-                    vx: (Math.random()-0.5)*(big?40:25), vy: (Math.random()-0.5)*(big?40:25), 
-                    life: 1.0, col: cols[Math.floor(Math.random()*cols.length)]
-                });
+                sparks.push({ x, y, vx: (Math.random()-0.5)*(big?40:25), vy: (Math.random()-0.5)*(big?40:25), life: 1.0, col: cols[Math.floor(Math.random()*cols.length)] });
             }
         },
 
         startCoinFlip() {
-            this.state = 'COIN_FLIP';
-            audioSys.stopBGM();
+            this.state = 'COIN_FLIP'; audioSys.stopBGM();
             document.getElementById('coin-flip-screen')?.classList.remove('hidden');
-            const resEl = document.getElementById('coin-result');
-            if(resEl) resEl.style.display = 'none';
+            const resEl = document.getElementById('coin-result'); if(resEl) resEl.style.display = 'none';
             audioSys.playSfx(400, 'sawtooth', 2.0, 0.2); 
             setTimeout(() => {
-                const isP1Win = Math.random() < 0.5;
-                if(isP1Win) this.p1.score++; else this.p2.score++;
+                const isP1Win = Math.random() < 0.5; if(isP1Win) this.p1.score++; else this.p2.score++;
                 audioSys.playCheerSound(2.0, true);
-                if(resEl) {
-                    resEl.innerText = `${isP1Win ? this.p1.name : this.p2.name} 극장골!!`;
-                    resEl.style.display = 'block';
-                }
-                setTimeout(() => {
-                    document.getElementById('coin-flip-screen')?.classList.add('hidden');
-                    this.finishSet();
-                }, 3000);
+                if(resEl) { resEl.innerText = `${isP1Win ? this.p1.name : this.p2.name} 극장골!!`; resEl.style.display = 'block'; }
+                setTimeout(() => { document.getElementById('coin-flip-screen')?.classList.add('hidden'); this.finishSet(); }, 3000);
             }, 2000);
         },
 
@@ -813,10 +770,7 @@
             if(this.state !== 'PLAY') return;
 
             if(this.isCounting) {
-                sparks = sparks.filter(s => {
-                    s.x += s.vx; s.y += s.vy; s.vy += 0.2; s.life -= 0.015;
-                    return s.life > 0;
-                });
+                sparks = sparks.filter(s => { s.x += s.vx; s.y += s.vy; s.vy += 0.2; s.life -= 0.015; return s.life > 0; });
                 return;
             }
 
@@ -829,15 +783,10 @@
                 else { this.startCoinFlip(); return; }
             }
 
-            sparks = sparks.filter(s => {
-                s.x += s.vx; s.y += s.vy; s.vy += 0.2; s.life -= 0.015;
-                return s.life > 0;
-            });
+            sparks = sparks.filter(s => { s.x += s.vx; s.y += s.vy; s.vy += 0.2; s.life -= 0.015; return s.life > 0; });
 
-            // 플레이어 움직임 업데이트 (경계선 고정 추가)
             [this.p1, this.p2].forEach(p => {
                 p.x += (p.tx - p.x) * 0.15; p.y += (p.ty - p.y) * 0.15;
-                // 경기장 경계 밖으로 나가지 못하게 고정
                 p.x = Math.max(p.r, Math.min(this.w - p.r, p.x));
                 p.y = Math.max(p.r, Math.min(this.h - p.r, p.y));
             });
@@ -846,11 +795,8 @@
                 const dx = p.x - this.ball.x, dy = p.y - this.ball.y, dist = Math.sqrt(dx*dx + dy*dy);
                 if (dist < 420) {
                     let force = 9500 / (dist * dist + 1500);
-                    if (p.pol === this.ball.pol) { 
-                        this.ball.vx -= (dx / dist) * force; this.ball.vy -= (dy / dist) * force;
-                    } else { 
-                        this.ball.vx += (dx / dist) * (force * 0.95); this.ball.vy += (dy / dist) * (force * 0.95);
-                    }
+                    if (p.pol === this.ball.pol) { this.ball.vx -= (dx / dist) * force; this.ball.vy -= (dy / dist) * force; }
+                    else { this.ball.vx += (dx / dist) * (force * 0.95); this.ball.vy += (dy / dist) * (force * 0.95); }
                 }
             });
 
@@ -858,8 +804,7 @@
             this.ball.vx *= 0.985; this.ball.vy *= 0.985;
 
             if(this.ball.y < this.ball.r || this.ball.y > this.h - this.ball.r) { 
-                this.ball.vy *= -0.9; 
-                this.ball.y = this.ball.y < this.ball.r ? this.ball.r : this.h - this.ball.r;
+                this.ball.vy *= -0.9; this.ball.y = this.ball.y < this.ball.r ? this.ball.r : this.h - this.ball.r;
                 audioSys.playSfx(200, 'sine', 0.08, 0.3);
             }
             
@@ -883,57 +828,36 @@
         },
 
         goal(m, x) { 
-            this.burst(x, 375, false);
-            audioSys.playCheerSound(2.0); 
-            audioSys.playSfx(523, 'sine', 0.1, 0.5); 
-            setTimeout(() => audioSys.playSfx(659, 'sine', 0.1, 0.5), 100); 
-            setTimeout(() => audioSys.playSfx(784, 'sine', 0.4, 0.5), 200);
-            
-            this.ball.pol = this.ball.pol === 'N' ? 'S' : 'N'; 
-            this.updateBoard(); 
+            this.burst(x, 375, false); audioSys.playCheerSound(2.0); 
+            audioSys.playSfx(523, 'sine', 0.1, 0.5); setTimeout(() => audioSys.playSfx(659, 'sine', 0.1, 0.5), 100); setTimeout(() => audioSys.playSfx(784, 'sine', 0.4, 0.5), 200);
+            this.ball.pol = this.ball.pol === 'N' ? 'S' : 'N'; this.updateBoard(); 
             this.msg(`${m} 다음 공은 ${this.ball.pol === 'N' ? 'N극(빨강)' : 'S극(파랑)'} 입니다!`);
-
             if (this.p1.score >= 3 || this.p2.score >= 3) return;
-
-            this.resetPositions();
-            this.startCountdown();
+            this.resetPositions(); this.startCountdown();
         },
 
         finishSet() {
-            this.state = 'RESULT';
-            audioSys.stopBGM();
-            document.getElementById('countdown-overlay').style.display = 'none';
-            this.isCounting = false;
-
+            this.state = 'RESULT'; audioSys.stopBGM();
+            document.getElementById('countdown-overlay').style.display = 'none'; this.isCounting = false;
             const setWin = this.p1.score > this.p2.score ? this.p1 : this.p2;
             if(setWin === this.p1) this.p1Wins++; else this.p2Wins++;
             const setPrefix = this.matchType === 1 ? '[단판 결승]' : `[${this.currentSet}세트]`;
             logs.unshift(`${setPrefix} ${this.p1.name} ${this.p1.score} : ${this.p2.score} ${this.p2.name}`);
-            const reqWins = Math.ceil(this.matchType / 2);
-            const isSeriesOver = this.p1Wins >= reqWins || this.p2Wins >= reqWins;
-            const wt = document.getElementById('win-text');
-            const rs = document.getElementById('result-screen');
-            const tn = document.getElementById('top-nav');
-            const hb = document.getElementById('history-box');
-            const status = document.getElementById('series-status');
-            const btnNext = document.getElementById('btn-next-set');
-
+            const reqWins = Math.ceil(this.matchType / 2), isSeriesOver = this.p1Wins >= reqWins || this.p2Wins >= reqWins;
+            const wt = document.getElementById('win-text'), rs = document.getElementById('result-screen'), tn = document.getElementById('top-nav'), hb = document.getElementById('history-box'), status = document.getElementById('series-status'), btnNext = document.getElementById('btn-next-set');
             if(isSeriesOver) {
                 const finalWin = this.p1Wins >= reqWins ? this.p1 : this.p2;
                 if(wt) wt.innerText = finalWin.name + ' 최종 우승!';
                 if(btnNext) btnNext.style.display = 'none';
-                audioSys.playCheerSound(4.0, true); 
-                for(let i=0; i<6; i++) setTimeout(() => this.burst(Math.random()*1200, Math.random()*500, true), i*400);
+                audioSys.playCheerSound(4.0, true); for(let i=0; i<6; i++) setTimeout(() => this.burst(Math.random()*1200, Math.random()*500, true), i*400);
             } else {
                 if(wt) wt.innerText = `${this.currentSet}세트 ${setWin.name} 승리!`;
                 if(btnNext) btnNext.style.display = 'block';
-                audioSys.playCheerSound(2.5);
-                this.burst(600, 375, true);
+                audioSys.playCheerSound(2.5); this.burst(600, 375, true);
             }
             if(status) status.innerText = `총 전적: ${this.p1.name} ${this.p1Wins} - ${this.p2Wins} ${this.p2.name}`;
             if(hb) hb.innerHTML = logs.map(h => `<div style="padding:10px 0; border-bottom:1px solid #444;">${h}</div>`).join('');
-            if(rs) rs.classList.remove('hidden');
-            if(tn) tn.classList.add('hidden');
+            if(rs) rs.classList.remove('hidden'); if(tn) tn.classList.add('hidden');
         },
 
         drawBall(x, y, r, pole) {
@@ -942,8 +866,7 @@
             const bgGrad = ctx.createRadialGradient(-r*0.3, -r*0.3, r*0.1, 0, 0, r);
             bgGrad.addColorStop(0, '#ffffff'); bgGrad.addColorStop(0.8, '#dddddd'); bgGrad.addColorStop(1, '#999999');
             ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fillStyle = bgGrad; ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#222';
+            ctx.shadowBlur = 0; ctx.fillStyle = '#222';
             for(let i=0; i<5; i++) {
                 ctx.beginPath(); const a = (i * Math.PI * 2) / 5;
                 ctx.moveTo(Math.cos(a)*r*0.4, Math.sin(a)*r*0.4);
@@ -953,11 +876,9 @@
             }
             ctx.beginPath(); ctx.arc(0, 0, r*0.35, 0, Math.PI*2); ctx.fill();
             const c = pole === 'N' ? '#ff2a2a' : '#2a5dff';
-            ctx.shadowBlur = 10; ctx.shadowColor = c;
-            ctx.strokeStyle = c; ctx.lineWidth = 6;
+            ctx.shadowBlur = 10; ctx.shadowColor = c; ctx.strokeStyle = c; ctx.lineWidth = 6;
             ctx.beginPath(); ctx.arc(0, 0, r-3, 0, Math.PI*2); ctx.stroke();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = c; ctx.font = '900 26px "Pretendard"'; ctx.textAlign = 'center';
+            ctx.shadowBlur = 0; ctx.fillStyle = c; ctx.font = '900 26px "Pretendard"'; ctx.textAlign = 'center';
             ctx.fillText(pole, 0, 10); ctx.restore();
         },
 
